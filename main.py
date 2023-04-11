@@ -1,4 +1,6 @@
 from collections import deque
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class Processo:
     def __init__(self, id, burst):
