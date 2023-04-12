@@ -5,9 +5,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define PHILOS 6
-#define DELAY 5000
-#define FOOD 5000
+#define PHILOS 5
+#define FOOD 1000
 
 void *philosopher(void *id);
 void grab_chopstick(int, int, char *);
@@ -23,7 +22,7 @@ int main(int argn, char **argv) {
   int i;
 
   if (argn == 2) {
-    sleep_seconds = atoi(argv[1]);
+    //sleep_seconds = atoi(argv[1]);
   }
 
   pthread_mutex_init(&food_lock, NULL);
@@ -54,15 +53,8 @@ void *philosopher(void *num) {
   }
 
   while (f = food_on_table()) {
-    /* Thanks to philosophers #1 who would like to take a nap
-     * before picking up the chopsticks, the other philosophers
-     * may be able to eat their dishes and not deadlock.
-     */
-    if (id == 1) {
-      sleep(sleep_seconds);
-    }
 
-    if (id == PHILOS - 1) {
+    if (id == 0) {
       grab_chopstick(id, left_chopstick, "left ");
       grab_chopstick(id, right_chopstick, "right ");
 
@@ -72,7 +64,6 @@ void *philosopher(void *num) {
     }
 
     printf("Philosopher %d: eating.\n", id);
-    // usleep(DELAY * (FOOD - f + 1));
     down_chopsticks(left_chopstick, right_chopstick);
   }
 
