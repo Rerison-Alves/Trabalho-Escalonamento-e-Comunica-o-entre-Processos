@@ -5,64 +5,71 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define PHILOS 5 // Define o número de filósofos
-#define FOOD 1000 // Define a quantidade de comida disponível na mesa
-#define MAX_MEALS 1 // Define a quantidade máxima de refeições de cada filósofo
+#define PHILOS 3 // Define o número de filósofos
+#define FOOD 100 // Define a quantidade de comida disponível na mesa
 
+void *philosopher(void *id); // Declaração da função que representa o
+                             // comportamento dos filósofos
+void grab_chopstick(
+    int, int,
+    char *); // Declaração da função que simula um filósofo pegando um hashi
+void down_chopsticks(int, int); // Declaração da função que simula um filósofo
+                                // colocando os hashis na mesa
+int food_on_table(); // Declaração da função que simula a verificação de comida
+                     // na mesa
 
-void *philosopher(void *id); // Declaração da função que representa o comportamento dos filósofos
-void grab_chopstick(int, int, char *); // Declaração da função que simula um filósofo pegando um hashi
-void down_chopsticks(int, int); // Declaração da função que simula um filósofo colocando os hashis na mesa
-int food_on_table(); // Declaração da função que simula a verificação de comida na mesa
-
-
-pthread_mutex_t chopstick[PHILOS]; // Declaração dos hashis (mutexes) que os filósofos compartilham
-pthread_t philo[PHILOS]; // Declaração dos filósofos (threads)
-pthread_mutex_t food_lock; // Declaração do mutex para controlar a quantidade de comida na mesa
-pthread_mutex_t print_lock; // Declaração do mutex para controlar a impressão na tela
-int meals_eaten[PHILOS]; // Vetor que armazena a quantidade de refeições de cada filósofo
+pthread_mutex_t chopstick[PHILOS]; // Declaração dos hashis (mutexes) que os
+                                   // filósofos compartilham
+pthread_t philo[PHILOS];           // Declaração dos filósofos (threads)
+pthread_mutex_t food_lock; // Declaração do mutex para controlar a quantidade de
+                           // comida na mesa
+pthread_mutex_t
+    print_lock; // Declaração do mutex para controlar a impressão na tela
 
 int main(int argn, char **argv) {
-  int i;
-	int total_meals = PHILOS * MAX_MEALS;
+  int i, j;
 
-
-  pthread_mutex_init(&food_lock, NULL); // Inicializa o mutex para controlar a quantidade de comida na mesa
-	pthread_mutex_init(&print_lock, NULL); // Inicializa o mutex para controlar a impressão na tela
+  pthread_mutex_init(
+      &food_lock,
+      NULL); // Inicializa o mutex para controlar a quantidade de comida na mesa
+  pthread_mutex_init(
+      &print_lock,
+      NULL); // Inicializa o mutex para controlar a impressão na tela
   for (i = 0; i < PHILOS; i++) {
     pthread_mutex_init(&chopstick[i], NULL); // Inicializa os hashis
-		meals_eaten[i] = 0; // Inicializa o contador de refeições de cada filósofo
+  }
+  for (j = 0; j < 1000; j++) {
+    for (i = 0; i < PHILOS; i++) {
+      pthread_create(&philo[i], NULL, philosopher,
+                     (void *)i); // Cria as threads para os filósofos
+    }
+    for (i = 0; i < PHILOS; i++) {
+      pthread_join(philo[i], NULL); // Aguarda todas as threads finalizarem
+    }
+  }
 
-  }
-  for (i = 0; i < PHILOS; i++) {
-    pthread_create(&philo[i], NULL, philosopher, (void *)i); // Cria as threads para os filósofos
-  }
-  for (i = 0; i < PHILOS; i++) {
-    pthread_join(philo[i], NULL); // Aguarda todas as threads finalizarem
-  }
-
-	
   return 0;
 }
-
 void *philosopher(void *num) {
   int id;
   int left_chopstick, right_chopstick, f;
-	int eat_count = 0; // Inicializa o contador de quantas vezes o filósofo comeu
-
+  int eat_count = 0; // Inicializa o contador de quantas vezes o filósofo comeu
 
   id = (int)num; // Conversão do ponteiro genérico para um inteiro
   printf("Filosofo %d parou de pensar e esta pronto para comer.\n", id);
-  right_chopstick = id; // Define qual hashi fica à direita do filósofo
+  right_chopstick = id;    // Define qual hashi fica à direita do filósofo
   left_chopstick = id + 1; // Define qual hashi fica à esquerda do filósofo
 
-  if (left_chopstick == PHILOS) { // Se o hashi à esquerda for o último, volta para o primeiro
+  if (left_chopstick ==
+      PHILOS) { // Se o hashi à esquerda for o último, volta para o primeiro
     left_chopstick = 0;
   }
 
-  while ((f = food_on_table())) { // Enquanto houver comida na mesa, o filósofo continua comendo
+  while ((f = food_on_table())) { // Enquanto houver comida na mesa, o filósofo
+                                  // continua comendo
 
-    if (id == 0) { // Se o filósofo for o de id 0, ele pega primeiro o hashi da esquerda
+    if (id == 0) { // Se o filósofo for o de id 0, ele pega primeiro o hashi da
+                   // esquerda
 
       grab_chopstick(id, left_chopstick, "left ");
       grab_chopstick(id, right_chopstick, "right ");
@@ -72,22 +79,23 @@ void *philosopher(void *num) {
       grab_chopstick(id, left_chopstick, "left");
     }
     printf("Philosopher %d: eating.\n", id);
-    down_chopsticks(left_chopstick, right_chopstick); // O filósofo libera os hashis
-		eat_count++; // Incrementa o contador de quantas vezes o filósofo comeu
-		if (eat_count == MAX_MEALS) {
-      f = 0; // Se o filósofo já comeu a quantidade máxima de refeições, atualiza a variável f para 0 para fazer com que os outros filósofos saiam do loop
-    }
+    down_chopsticks(left_chopstick,
+                    right_chopstick); // O filósofo libera os hashis
+    eat_count++; // Incrementa o contador de quantas vezes o filósofo comeu
   }
 
-  printf("Philosopher %d is done eating.\n", id); //Acabou de comer
-	printf("Philosopher %d ate %d times.\n", id, eat_count); // Imprime quantas vezes o filósofo comeu
+  printf("Philosopher %d is done eating.\n", id); // Acabou de comer
+  printf("Philosopher %d ate %d times.\n", id,
+         eat_count); // Imprime quantas vezes o filósofo comeu
   return (NULL);
 }
 // função para verificar se há comida na mesa
-int food_on_table() { 
+int food_on_table() {
   static int food = FOOD;
   int myfood;
-  pthread_mutex_lock(&food_lock); // trava o mutex da comida para garantir que apenas um filósofo acesse a variável food por vez
+  pthread_mutex_lock(
+      &food_lock); // trava o mutex da comida para garantir que apenas um
+                   // filósofo acesse a variável food por vez
   if (food > 0) {
     food--;
   }
@@ -124,8 +132,8 @@ void grab_chopstick(int phil, int c, char *hand) {
 
 // função para soltar os hashis
 void down_chopsticks(int c1, int c2) {
-	// libera o mutex do primeiro hashi
+  // libera o mutex do primeiro hashi
   pthread_mutex_unlock(&chopstick[c1]);
-	// libera o mutex do segundo hashi
+  // libera o mutex do segundo hashi
   pthread_mutex_unlock(&chopstick[c2]);
 }
